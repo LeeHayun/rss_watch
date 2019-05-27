@@ -211,6 +211,8 @@ int main(int argc, const char **argv) {
   for (int t = 0; t < times; t++) {
     pid_t pid;
     int status;
+    int max_rss = 0;
+
     switch (pid = fork()) {
       // error
       case -1:
@@ -225,7 +227,9 @@ int main(int argc, const char **argv) {
       // parent
       default:
         while (waitpid(pid, &status, WNOHANG) == 0) {
-          printf("[RSS] %ld %d\n", get_truncated_ms_time(), get_rss(pid));
+          int rss = get_rss(pid);
+          printf("[RSS] %ld %d\n", get_truncated_ms_time(), rss);
+          max_rss = (max_rss < rss) ? rss : max_rss;
           mssleep(interval);
         }
 
@@ -237,6 +241,7 @@ int main(int argc, const char **argv) {
         }
     }
     printf("[RSS] %ld %d\n", get_truncated_ms_time(), 0);
+    printf("\nPeak RSS: %d KB\n", max_rss);
   }
 
   return 0;
